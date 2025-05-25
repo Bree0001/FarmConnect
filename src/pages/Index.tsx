@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,28 +7,34 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sprout, Users, ShoppingCart, Leaf } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
-type User = {
-  email: string;
-  type: 'farmer' | 'buyer';
-  name: string;
+type UserProfile = {
+  id: string;
+  full_name: string | null;
+  user_type: string | null;
+  location: string | null;
 };
 
 type Produce = {
   id: string;
-  farmerEmail: string;
-  farmerName: string;
-  cropName: string;
-  quantity: string;
-  price: string;
-  location: string;
-  dateAdded: string;
+  user_id: string | null;
+  farmer_name: string | null;
+  crop_name: string | null;
+  quantity: number | null;
+  price_per_kg: number | null;
+  location: string | null;
+  date_posted: string | null;
 };
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [produces, setProduces] = useState<Produce[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   // Auth form state
@@ -47,73 +53,251 @@ const Index = () => {
     location: ''
   });
 
-  const handleAuth = (e: React.FormEvent) => {
+  // Initialize auth state
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile after auth state change
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUserProfile(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch user profile from database
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  // Fetch produce listings
+  const fetchProduces = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('produce')
+        .select('*')
+        .order('date_posted', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching produces:', error);
+        return;
+      }
+      
+      setProduces(data || []);
+    } catch (error) {
+      console.error('Error fetching produces:', error);
+    }
+  };
+
+  // Load produces when user is authenticated
+  useEffect(() => {
+    if (user) {
+      fetchProduces();
+    }
+  }, [user]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (authMode === 'signup') {
-      setUser({
-        email: authForm.email,
-        type: authForm.userType,
-        name: authForm.name
-      });
+    try {
+      if (authMode === 'signup') {
+        const { error } = await supabase.auth.signUp({
+          email: authForm.email,
+          password: authForm.password,
+          options: {
+            data: {
+              name: authForm.name,
+              userType: authForm.userType
+            }
+          }
+        });
+        
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        toast({
+          title: "Account created successfully!",
+          description: `Welcome to FarmConnect, ${authForm.name}! Please check your email to verify your account.`
+        });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authForm.email,
+          password: authForm.password
+        });
+        
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        toast({
+          title: "Logged in successfully!",
+          description: "Welcome back to FarmConnect!"
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Account created successfully!",
-        description: `Welcome to FarmConnect, ${authForm.name}!`
-      });
-    } else {
-      // Simulate login
-      setUser({
-        email: authForm.email,
-        type: authForm.userType,
-        name: authForm.name || 'User'
-      });
-      toast({
-        title: "Logged in successfully!",
-        description: `Welcome back to FarmConnect!`
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
       });
     }
   };
 
-  const handleAddProduce = (e: React.FormEvent) => {
+  const handleAddProduce = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newProduce: Produce = {
-      id: Date.now().toString(),
-      farmerEmail: user!.email,
-      farmerName: user!.name,
-      ...produceForm,
-      dateAdded: new Date().toLocaleDateString()
-    };
+    if (!user || !userProfile) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add produce.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    setProduces([...produces, newProduce]);
-    setProduceForm({
-      cropName: '',
-      quantity: '',
-      price: '',
-      location: ''
-    });
-    
+    try {
+      const { error } = await supabase
+        .from('produce')
+        .insert({
+          user_id: user.id,
+          farmer_name: userProfile.full_name,
+          crop_name: produceForm.cropName,
+          quantity: parseInt(produceForm.quantity),
+          price_per_kg: parseFloat(produceForm.price),
+          location: produceForm.location
+        });
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setProduceForm({
+        cropName: '',
+        quantity: '',
+        price: '',
+        location: ''
+      });
+      
+      // Refresh produces list
+      fetchProduces();
+      
+      toast({
+        title: "Produce added successfully!",
+        description: `${produceForm.cropName} has been listed for sale.`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add produce. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setAuthForm({
+        email: '',
+        password: '',
+        name: '',
+        userType: 'buyer'
+      });
+      
+      toast({
+        title: "Logged out",
+        description: "Come back soon!"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleContactFarmer = (produce: Produce) => {
     toast({
-      title: "Produce added successfully!",
-      description: `${produceForm.cropName} has been listed for sale.`
+      title: "Contact Information",
+      description: `Contact ${produce.farmer_name} for ${produce.crop_name}. (Contact feature coming soon!)`
     });
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setAuthForm({
-      email: '',
-      password: '',
-      name: '',
-      userType: 'buyer'
-    });
-    toast({
-      title: "Logged out",
-      description: "Come back soon!"
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Sprout className="h-12 w-12 text-green-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">Loading FarmConnect...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!user) {
+  if (!user || !userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         {/* Header */}
@@ -194,18 +378,6 @@ const Index = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="userType">I am a...</Label>
-                      <select
-                        id="userType"
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        value={authForm.userType}
-                        onChange={(e) => setAuthForm({...authForm, userType: e.target.value as 'farmer' | 'buyer'})}
-                      >
-                        <option value="buyer">Buyer</option>
-                        <option value="farmer">Farmer</option>
-                      </select>
-                    </div>
                     <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
                       Login
                     </Button>
@@ -242,6 +414,7 @@ const Index = () => {
                         value={authForm.password}
                         onChange={(e) => setAuthForm({...authForm, password: e.target.value})}
                         required
+                        minLength={6}
                       />
                     </div>
                     <div>
@@ -270,7 +443,7 @@ const Index = () => {
   }
 
   // Farmer Dashboard
-  if (user.type === 'farmer') {
+  if (userProfile?.user_type === 'farmer') {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -282,7 +455,7 @@ const Index = () => {
                 <h1 className="text-2xl font-bold text-gray-900">FarmConnect</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+                <span className="text-sm text-gray-600">Welcome, {userProfile.full_name}</span>
                 <Button variant="outline" onClick={handleLogout}>Logout</Button>
               </div>
             </div>
@@ -318,25 +491,28 @@ const Index = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="quantity">Quantity Available</Label>
+                    <Label htmlFor="quantity">Quantity Available (kg)</Label>
                     <Input
                       id="quantity"
-                      type="text"
-                      placeholder="e.g., 50 kg, 100 lbs"
+                      type="number"
+                      placeholder="e.g., 50"
                       value={produceForm.quantity}
                       onChange={(e) => setProduceForm({...produceForm, quantity: e.target.value})}
                       required
+                      min="1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Price</Label>
+                    <Label htmlFor="price">Price per kg ($)</Label>
                     <Input
                       id="price"
-                      type="text"
-                      placeholder="e.g., $5/kg, $2/lb"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 5.00"
                       value={produceForm.price}
                       onChange={(e) => setProduceForm({...produceForm, price: e.target.value})}
                       required
+                      min="0.01"
                     />
                   </div>
                   <div>
@@ -364,18 +540,20 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {produces.filter(p => p.farmerEmail === user.email).length === 0 ? (
+                  {produces.filter(p => p.user_id === user.id).length === 0 ? (
                     <p className="text-gray-500 text-center py-8">No produce listed yet. Add your first listing!</p>
                   ) : (
                     produces
-                      .filter(p => p.farmerEmail === user.email)
+                      .filter(p => p.user_id === user.id)
                       .map(produce => (
                         <div key={produce.id} className="border rounded-lg p-4 bg-green-50">
-                          <h3 className="font-semibold text-green-800">{produce.cropName}</h3>
-                          <p className="text-sm text-gray-600">Quantity: {produce.quantity}</p>
-                          <p className="text-sm text-gray-600">Price: {produce.price}</p>
+                          <h3 className="font-semibold text-green-800">{produce.crop_name}</h3>
+                          <p className="text-sm text-gray-600">Quantity: {produce.quantity} kg</p>
+                          <p className="text-sm text-gray-600">Price: ${produce.price_per_kg}/kg</p>
                           <p className="text-sm text-gray-600">Location: {produce.location}</p>
-                          <p className="text-xs text-gray-500">Added: {produce.dateAdded}</p>
+                          <p className="text-xs text-gray-500">
+                            Added: {produce.date_posted ? new Date(produce.date_posted).toLocaleDateString() : 'N/A'}
+                          </p>
                         </div>
                       ))
                   )}
@@ -400,7 +578,7 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">FarmConnect</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+              <span className="text-sm text-gray-600">Welcome, {userProfile?.full_name}</span>
               <Button variant="outline" onClick={handleLogout}>Logout</Button>
             </div>
           </div>
@@ -425,17 +603,22 @@ const Index = () => {
             produces.map(produce => (
               <Card key={produce.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-lg text-green-700">{produce.cropName}</CardTitle>
+                  <CardTitle className="text-lg text-green-700">{produce.crop_name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <p className="text-sm"><span className="font-medium">Farmer:</span> {produce.farmerName}</p>
-                    <p className="text-sm"><span className="font-medium">Quantity:</span> {produce.quantity}</p>
-                    <p className="text-sm"><span className="font-medium">Price:</span> {produce.price}</p>
+                    <p className="text-sm"><span className="font-medium">Farmer:</span> {produce.farmer_name}</p>
+                    <p className="text-sm"><span className="font-medium">Quantity:</span> {produce.quantity} kg</p>
+                    <p className="text-sm"><span className="font-medium">Price:</span> ${produce.price_per_kg}/kg</p>
                     <p className="text-sm"><span className="font-medium">Location:</span> {produce.location}</p>
-                    <p className="text-xs text-gray-500">Listed: {produce.dateAdded}</p>
+                    <p className="text-xs text-gray-500">
+                      Listed: {produce.date_posted ? new Date(produce.date_posted).toLocaleDateString() : 'N/A'}
+                    </p>
                   </div>
-                  <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
+                  <Button 
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
+                    onClick={() => handleContactFarmer(produce)}
+                  >
                     Contact Farmer
                   </Button>
                 </CardContent>

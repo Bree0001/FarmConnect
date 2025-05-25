@@ -18,6 +18,7 @@ export type Database = {
           location: string | null
           price_per_kg: number | null
           quantity: number | null
+          user_id: string | null
         }
         Insert: {
           crop_name?: string | null
@@ -27,6 +28,7 @@ export type Database = {
           location?: string | null
           price_per_kg?: number | null
           quantity?: number | null
+          user_id?: string | null
         }
         Update: {
           crop_name?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           location?: string | null
           price_per_kg?: number | null
           quantity?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
