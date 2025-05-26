@@ -1,73 +1,166 @@
-# Welcome to your Lovable project
+<a name="readme-top"></a>
 
-## Project info
+<div>
+  <img src="murple_logo.png" alt="logo" width="140"  height="auto" />
+  <br/>
 
-**URL**: https://lovable.dev/projects/3ea69a8e-7399-4084-92bc-063d00a92c70
+  <h3><b>FarmConnect</b></h3>
 
-## How can I edit this code?
+</div>
 
-There are several ways of editing your application.
+# 📗 Table of Contents
 
-**Use Lovable**
+- [📖 About the Project](#about-project)
+  - [🛠 Built With](#built-with)
+    - [Tech Stack](#tech-stack)
+    - [Key Features](#key-features)
+  - [🚀 Live Demo](#live-demo)
+- [💻 Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+  - [Install](#install)
+  - [Usage](#usage)
+  - [Run tests](#run-tests)
+  - [Deployment](#deployment)
+- [👥 Authors](#authors)
+- [🔭 Future Features](#future-features)
+- [🤝 Contributing](#contributing)
+- [⭐️ Show your support](#support)
+- [🙏 Acknowledgements](#acknowledgements)
+- [❓ FAQ (OPTIONAL)](#faq)
+- [📝 License](#license)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3ea69a8e-7399-4084-92bc-063d00a92c70) and start prompting.
+# 📖 FarmConnect <a name="about-project"></a>
 
-Changes made via Lovable will be committed automatically to this repo.
+**FarmConnect** is a hackathon project built to help small-scale farmers get real-time local market price alerts and connect with nearby buyers and sellers, improving their market access and income.
 
-**Use your preferred IDE**
+## 🛠 Built With <a name="built-with"></a>
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Tech Stack <a name="tech-stack"></a>
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+<details>
+  <summary>Client</summary>
+  <ul>
+    <li><a href="https://reactjs.org/">React.js</a></li>
+    <li><a href="https://tailwindcss.com/">Tailwind CSS</a></li>
+  </ul>
+</details>
 
-Follow these steps:
+<details>
+  <summary>Server</summary>
+  <ul>
+    <li><a href="https://supabase.com/">Supabase</a></li>
+  </ul>
+</details>
+
+<details>
+  <summary>Hosting</summary>
+  <ul>
+    <li><a href="https://vercel.com/">Vercel</a></li>
+  </ul>
+</details>
+
+### Key Features <a name="key-features"></a>
+
+- **Real-time local market price alerts**
+- **User authentication (farmers and buyers)**
+- **Mobile-responsive and clean user interface**
+
+<p>(<a href="#readme-top">back to top</a>)</p>
+
+## 🚀 Live Demo <a name="live-demo"></a>
+
+- [Live Demo Link](https://farm-connect-nine.vercel.app)
+
+<p>(<a href="#readme-top">back to top</a>)</p>
+
+## 💻 Getting Started <a name="getting-started"></a>
+
+To get a local copy up and running, follow these steps.
+
+### Prerequisites <a name="prerequisites"></a>
+
+In order to run this project you need:
+
+- Node.js
+- npm or yarn
+- Git
+
+### Setup <a name="setup"></a>
+
+Clone this repository to your desired folder:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+  git clone https://github.com/Bree0001/FarmConnect.git
+  cd FarmConnect
 ```
 
-**Edit a file directly in GitHub**
+### Install
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Install this project with:
+```sh
+  npm install
+  # or
+  yarn install
+```
+### Usage
 
-**Use GitHub Codespaces**
+To run the project, execute the following command:
+```sh
+  npm run dev
+  # or
+  yarn dev
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Run tests
 
-## What technologies are used for this project?
+To run tests, run the following command:
 
-This project is built with:
+- Register a new user
+- Log in
+- Navigate the dashboard and features
+- View market price alerts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Deployment
 
-## How can I deploy this project?
+You can deploy this project using:
 
-Simply open [Lovable](https://lovable.dev/projects/3ea69a8e-7399-4084-92bc-063d00a92c70) and click on Share -> Publish.
+**Vercel**
+It auto-deploys when you push to GitHub.
+Just connect your repo and you're done!
 
-## Can I connect a custom domain to my Lovable project?
+<p>(<a href="#readme-top">back to top</a>)</p>
 
-Yes, you can!
+## 👥 Authors <a name="authors"></a>
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+👤 **Brendah Warigia**
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- GitHub: [@githubhandle](https://github.com/Bree0001)
+- Twitter: [@twitterhandle](https://twitter.com/bree_warigia)
+- LinkedIn: [LinkedIn](https://linkedin.com/in/warigia_brendah)
+
+<p>(<a href="#readme-top">back to top</a>)</p>
+
+## 🔭 Future Features <a name="future-features"></a>
+
+- [ ] In-app messaging between buyers and farmers
+- [ ] Admin dashboard with analytics
+- [ ] SMS alerts for farmers without smartphones
+
+<p>(<a href="#readme-top">back to top</a>)</p>
+
+## 🙏 Acknowledgments <a name="acknowledgements"></a>
+
+I would like to thank...
+- Supabase for the free backend
+- Vercel for easy hosting
+- Hackathon organizers for the opportunity
+
+<p>(<a href="#readme-top">back to top</a>)</p>
+
+
+## 📝 License <a name="license"></a>
+
+This project is [MIT](./LICENSE) licensed.
+
+<p>(<a href="#readme-top">back to top</a>)</p>
