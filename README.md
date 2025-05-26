@@ -135,9 +135,9 @@ Just connect your repo and you're done!
 
 👤 **Brendah Warigia**
 
-- GitHub: [@githubhandle](https://github.com/Bree0001)
-- Twitter: [@twitterhandle](https://twitter.com/bree_warigia)
-- LinkedIn: [LinkedIn](https://linkedin.com/in/warigia_brendah)
+- GitHub: [Bree001](https://github.com/Bree0001)
+- Twitter: [@bree_warigia](https://twitter.com/bree_warigia)
+- LinkedIn: [Brendah Warigia](https://linkedin.com/in/warigia_brendah)
 
 <p>(<a href="#readme-top">back to top</a>)</p>
 
